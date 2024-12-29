@@ -7,6 +7,7 @@ import (
 
 	"github.com/RyanV-Souza/xlsx-background-go/internal/queue"
 	"github.com/RyanV-Souza/xlsx-background-go/internal/repository"
+	"github.com/go-mail/mail"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -50,6 +51,8 @@ func (w *Worker) handleGenerateXLSXTask(payload *queue.GenerateXLSXPayload) erro
 	f := excelize.NewFile()
 	defer f.Close()
 
+	f.DeleteSheet("Sheet1")
+
 	userSheet := "User Info"
 	f.NewSheet(userSheet)
 	f.SetCellValue(userSheet, "A1", "User ID")
@@ -81,6 +84,12 @@ func (w *Worker) handleGenerateXLSXTask(payload *queue.GenerateXLSXPayload) erro
 	if err := f.SaveAs(fileName); err != nil {
 		return fmt.Errorf("failed to save file: %v", err)
 	}
+	defer func() {
+		fmt.Println("Removing file...")
+		if err := os.Remove(fileName); err != nil {
+			fmt.Printf("Failed to remove file: %v\n", err)
+		}
+	}()
 
 	if err := sendEmail(user.Email, fileName); err != nil {
 		return fmt.Errorf("failed to send email: %v", err)
@@ -90,20 +99,16 @@ func (w *Worker) handleGenerateXLSXTask(payload *queue.GenerateXLSXPayload) erro
 }
 
 func sendEmail(to string, filePath string) error {
-	defer func() {
-		if err := os.Remove(filePath); err != nil {
-			fmt.Printf("Failed to remove file: %v\n", err)
-		}
-	}()
+	email := os.Getenv("EMAIL")
+	password := os.Getenv("PASSWORD")
 
 	m := mail.NewMessage()
-	m.SetHeader("From", "your-email@example.com")
+	m.SetHeader("From", email)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", "Your XLSX Report")
 	m.SetBody("text/plain", "Please find your requested report attached.")
 	m.Attach(filePath)
 
-	d := mail.NewDialer("smtp.example.com", 587, "username", "password")
-
+	d := mail.NewDialer("smtp.gmail.com", 587, email, password)
 	return d.DialAndSend(m)
 }
