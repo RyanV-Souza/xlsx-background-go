@@ -17,7 +17,7 @@ func NewWagonRepository(db *gorm.DB) *WagonRepository {
 
 func (r *WagonRepository) GetByDateRange(startDate, endDate time.Time) ([]model.Wagon, error) {
 	var wagons []model.Wagon
-	result := r.db.Where("date BETWEEN ? AND ?", startDate, endDate).Find(&wagons)
+	result := r.db.Where("start_date BETWEEN ? AND ?", startDate, endDate).Find(&wagons)
 	if result.Error != nil {
 		return nil, result.Error
 	}
