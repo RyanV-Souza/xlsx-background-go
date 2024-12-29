@@ -13,7 +13,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) GetById(id uint) (*model.User, error) {
+func (r *UserRepository) GetByID(id uint) (*model.User, error) {
 	var user model.User
 	result := r.db.First(&user, id)
 	if result.Error != nil {
